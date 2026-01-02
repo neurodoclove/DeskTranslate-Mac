@@ -14,6 +14,7 @@ class Ui_translateWindow(QMainWindow):
 
     def __init__(self, opacity_slider):
         super().__init__()
+        self.oldPosition = None
         self.setObjectName("translateWindow")
         self.resize(800, 161)
 
@@ -34,9 +35,18 @@ class Ui_translateWindow(QMainWindow):
         self.translated_text_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.translated_text_label.setObjectName("translated_text_label")
         self.translated_text_label.setWordWrap(True)
+        self.translated_text_label.setMouseTracking(False)
+        self.translated_text_label.mousePressEvent = lambda event: event.ignore()
+        self.translated_text_label.mouseMoveEvent = lambda event: event.ignore()
         self.translated_text_label.mousePressEvent = self.copy_clipboard
 
         self.setCentralWidget(self.centralwidget)
+        self.centralwidget.setMouseTracking(False)
+        self.centralwidget.mousePressEvent = lambda event: event.ignore()
+        self.centralwidget.mouseMoveEvent = lambda event: event.ignore()
+        self.translated_text_label.setMouseTracking(False)
+        self.translated_text_label.mousePressEvent = lambda event: event.ignore()
+        self.translated_text_label.mouseMoveEvent = lambda event: event.ignore()
 
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
@@ -46,20 +56,27 @@ class Ui_translateWindow(QMainWindow):
         self.setStyleSheet("background-color:black;")
 
     def mousePressEvent(self, event: QMouseEvent):
+        print("WINDOW PRESS HIT!")
         try:
-            self.oldPosition = event.globalPosition()
-            print(self.oldPosition)
-            print(type(self.oldPosition))
+            if event.button() == QtCore.Qt.MouseButton.LeftButton:
+               self.oldPosition = event.globalPosition()
+               print(self.oldPosition)
+               print(type(self.oldPosition))
+            event.accept()
         except AttributeError as e:
             print(f'Cannot detect mouse press: {e}')
 
     # action #2
     def mouseMoveEvent(self, event: QMouseEvent):
         try:
-            delta = event.globalPosition() - self.oldPosition
-            delta = delta.toPoint()
-            self.move(self.x() + delta.x(), self.y() + delta.y())
-            self.oldPosition = event.globalPosition()
+            if self.oldPosition is None:
+                return
+            if event.buttons() & QtCore.Qt.MouseButton.LeftButton:
+                delta = event.globalPosition() - self.oldPosition
+                delta = delta.toPoint()
+                self.move(self.x() + delta.x(), self.y() + delta.y())
+                self.oldPosition = event.globalPosition()
+                event.accept()
         except AttributeError as e:
             print(f'Unable to move window: {e}')
 
@@ -72,8 +89,13 @@ class Ui_translateWindow(QMainWindow):
         self.translated_text_label.setText(_translate("translateWindow", "Translated text here"))
 
     def closeEvent(self, event):
-        self.worker.stop_running()
-
+        try:
+            self.worker.stop_running()
+        except:
+            pass
+        event.accept()
+        import sys
+        sys.exit(0)
 
 if __name__ == "__main__":
     import sys
