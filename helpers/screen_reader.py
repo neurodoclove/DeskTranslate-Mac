@@ -58,7 +58,9 @@ class Worker(QtCore.QObject):
 
     def sstop(self):
         try:
-            self.engine.stop()
+            # Check if engine exists and is not None before stopping
+            if hasattr(self, 'engine') and self.engine is not None:
+                self.engine.stop()
         except AttributeError as e:
             print(f"Unable to stop engine: {e}")
 

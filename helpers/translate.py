@@ -90,12 +90,17 @@ class Ui_translateWindow(QMainWindow):
 
     def closeEvent(self, event):
         try:
-            self.worker.stop_running()
-        except:
+            if self.worker is not None:
+                self.worker.stop_running()
+        except (AttributeError, TypeError):
+            # This ignores the 'NoneType' has no attribute 'stop' error
             pass
+        except Exception:
+            pass
+            
         event.accept()
-        import sys
-        sys.exit(0)
+        # This prevents the Automator hang
+        QtCore.QTimer.singleShot(100, QtWidgets.QApplication.instance().quit)
 
 if __name__ == "__main__":
     import sys
